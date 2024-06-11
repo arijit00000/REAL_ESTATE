@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Exception;
+use Illuminate\Validation\ValidationException;
 use App\Models\User;
 
 class ApiController extends Controller
@@ -37,6 +38,32 @@ class ApiController extends Controller
         }
         catch(Exception $e){
             return response()->json(['success'=>false, 'error'=>$e->getMessage()], 500);
+        }
+    }
+
+    public function login(Request $request){
+        try{
+            $request->validate([
+                'email' => 'required|email',
+                'password' => 'required'
+            ]);
+
+            $email = $request->input('email');
+            $password = $request->input('password');
+
+            $user = User::where('email', $email)->first();
+
+            if (! $user || ! Hash::check($password, $user->password)) {
+                throw ValidationException::withMessages([
+                    'email' => ['The email is incorrect.'],
+                    'password' => ['The password is incorrect']
+                ]);
+            }
+
+            return response()->json(['success' => true, 200]);
+        }
+        catch(Exception $e){
+            return response()->json(['success' => false, 'error'=>$e->getMessage()], 500);
         }
     }
 }
